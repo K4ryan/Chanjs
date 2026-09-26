@@ -1,0 +1,30 @@
+  odor                     seed  1 reached=True min_food=2.0mm wall=171.3s
+  odor                     seed  0 reached=True min_food=1.8mm wall=188.6s
+  food_orns_silenced       seed  0 reached=False min_food=26.1mm wall=372.9s
+  odor_off                 seed  0 reached=False min_food=26.1mm wall=374.8s
+  odor_off                 seed  1 reached=False min_food=2.3mm wall=353.0s
+  food_orns_silenced       seed  1 reached=False min_food=2.3mm wall=352.4s
+  odor                     seed  2 reached=True min_food=2.0mm wall=201.3s
+  odor_off                 seed  2 reached=False min_food=30.0mm wall=343.7s
+  odor                     seed  3 reached=True min_food=1.9mm wall=241.2s
+  food_orns_silenced       seed  2 reached=False min_food=30.0mm wall=326.7s
+  odor_off                 seed  3 reached=False min_food=30.0mm wall=319.1s
+  odor                     seed  4 reached=True min_food=2.0mm wall=197.9s
+  food_orns_silenced       seed  3 reached=False min_food=30.0mm wall=307.6s
+  odor_off                 seed  4 reached=False min_food=30.1mm wall=292.6s
+  odor                     seed  5 reached=True min_food=1.9mm wall=171.2s
+  food_orns_silenced       seed  4 reached=False min_food=30.1mm wall=290.2s
+  odor_off                 seed  5 reached=False min_food=30.0mm wall=268.4s
+  odor                     seed  6 reached=True min_food=1.9mm wall=128.6s
+  food_orns_silenced       seed  5 reached=False min_food=30.0mm wall=267.3s
+  odor                     seed  7 reached=True min_food=1.7mm wall=132.9s
+  odor_off                 seed  6 reached=False min_food=2.6mm wall=267.6s
+  food_orns_silenced       seed  6 reached=False min_food=2.6mm wall=258.5s
+  odor_off                 seed  7 reached=False min_food=9.1mm wall=241.0s
+  food_orns_silenced       seed  7 reached=False min_food=9.1mm wall=241.5s
+
+condition                reached     95% CI      p vs odor  min food dist  path mm
+odor                      8/8   [0.68-1.00]        nan      1.9      36.0
+odor_off                  0/8   [0.00-0.32]      0.000     20.0     105.8
+food_orns_silenced        0/8   [0.00-0.32]      0.000     20.0     105.8
+wrote results\calibration_trajectories.png

@@ -1,0 +1,11 @@
+t=0.10s pos=(0.6,0.7) valence=+0.65
+t=0.20s pos=(1.4,0.9) valence=+0.59
+t=0.30s pos=(2.4,1.7) valence=+0.54
+t=0.40s pos=(3.5,2.9) valence=+0.46
+t=0.50s pos=(3.9,3.7) valence=+0.41
+t=0.60s pos=(4.0,4.2) valence=+0.41
+t=0.70s pos=(4.3,5.0) valence=+0.35
+t=0.80s pos=(4.1,6.1) valence=+0.40
+t=0.90s pos=(3.8,7.9) valence=+0.39
+t=1.00s pos=(3.9,9.6) valence=+0.41
+{"seed": 0, "reached": false, "time_to_food": null, "min_food_dist": 26.1449689048976, "min_danger_dist": 11.560863734684261, "path_mm": 13.527978149216862, "mean_valence": 0.45092499999999996, "wall_s": 80.9}

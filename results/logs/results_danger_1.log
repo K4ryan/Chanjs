@@ -1,0 +1,12 @@
+  baseline                 seed  2 reached=True min_food=2.0mm wall=207.1s
+  baseline                 seed  1 reached=True min_food=1.6mm wall=229.1s
+  baseline                 seed  0 reached=True min_food=1.6mm wall=236.9s
+  baseline                 seed  3 reached=True min_food=2.0mm wall=286.4s
+  baseline                 seed  5 reached=True min_food=1.8mm wall=245.5s
+  baseline                 seed  6 reached=True min_food=1.9mm wall=240.6s
+  baseline                 seed  7 reached=True min_food=2.0mm wall=218.4s
+  baseline                 seed  4 reached=True min_food=1.6mm wall=326.8s
+
+condition                reached     95% CI      p vs baseline  min food dist  path mm
+baseline                  8/8   [0.68-1.00]        nan      1.8      53.4
+wrote results\danger_1\baseline_trajectories.png

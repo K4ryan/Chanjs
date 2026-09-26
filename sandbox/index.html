@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fly Brain Sandbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070d; --panel:rgba(14,19,31,.82); --panel-solid:#0e131f; --line:rgba(140,170,220,.14);
+  --text:#e6ecf7; --muted:#8b97ad; --food:#ff9a3c; --danger:#3ca0ff; --approach:#c6ff3c; --avoid:#ff3cd2;
+  --pam:#2ee88a; --ppl1:#ff4b5c; --accent:#7cc4ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 Inter,system-ui,sans-serif;overflow:hidden}
+.app{display:grid;grid-template-columns:330px 8px minmax(0,1fr) 8px 36vw;height:100vh}
+.splitter{position:relative;background:#0b1019;cursor:col-resize;border-left:1px solid var(--line);border-right:1px solid var(--line);z-index:6;touch-action:none}
+.splitter:hover,.splitter.drag{background:#16223a}
+.splitter::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:38px;margin:-19px 0 0 -1px;border-radius:2px;background:rgba(140,170,220,.35)}
+.splitter .collapse{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:22px;height:34px;padding:0;border-radius:7px;font:700 14px Inter,sans-serif;
+  color:var(--muted);background:#141c2c;border:1px solid var(--line);cursor:pointer}
+.splitter .collapse:hover{color:var(--text);border-color:rgba(124,196,255,.5)}
+.collapsed{visibility:hidden;padding:0!important;overflow:hidden!important}
+#brainview{container-type:inline-size}
+@container (max-width:560px){#brain-title span{display:none}#brain-legend{max-width:190px;padding:8px 10px}#brain-legend .item{font-size:11px}#brain-tools{top:40px}.blabel{font-size:9.5px;padding:1px 5px}}
+.panel{background:var(--panel-solid);border-right:1px solid var(--line);overflow-y:auto;padding:18px 18px 28px}
+h1{font-size:18px;margin:0 0 2px;letter-spacing:.2px}
+.sub{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+h2{font-size:11.5px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);margin:20px 0 10px;font-weight:600}
+.knob{margin:0 0 14px}
+.knob .row{display:flex;justify-content:space-between;align-items:baseline}
+.knob label{font-weight:600;font-size:13.5px}
+.knob .val{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--accent)}
+.knob .hint{color:var(--muted);font-size:11.5px;margin-top:2px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 0}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:600 13px Inter,sans-serif;color:var(--text);background:#1a2336;border:1px solid var(--line);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.15s}
+button:hover:not(:disabled){background:#243150;border-color:rgba(124,196,255,.45)}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:linear-gradient(135deg,#2a6cf0,#6a4df5);border-color:transparent}
+button.primary:hover:not(:disabled){filter:brightness(1.12)}
+button.real{background:linear-gradient(135deg,#f07a2a,#e0355a);border-color:transparent;width:100%}
+select,input[type=number]{font:13px Inter,sans-serif;color:var(--text);background:#1a2336;border:1px solid var(--line);border-radius:8px;padding:7px 8px}
+.progress{height:8px;background:#1a2336;border-radius:6px;overflow:hidden;margin-top:10px}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,#f07a2a,#e0355a);transition:width .6s}
+.status{color:var(--muted);font-size:12px;margin-top:6px;min-height:17px}
+.note{font-size:11.5px;color:var(--muted);border-left:2px solid var(--line);padding-left:9px;margin-top:10px}
+.view{position:relative;overflow:hidden}
+.view canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;pointer-events:none;font-size:12.5px}
+.card{background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+#hud-tl{top:14px;left:14px;min-width:230px}
+#hud-tl .big{font-size:20px;font-weight:700;font-family:"JetBrains Mono",monospace}
+#hud-tr{top:14px;right:14px;pointer-events:auto;display:flex;gap:6px}
+#hud-tr button{padding:6px 10px;font-size:12px}
+#hud-tr button.on{border-color:var(--accent);color:var(--accent)}
+#hud-bl{bottom:14px;left:14px;color:var(--muted);font-size:12px}
+#badge{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-weight:700;font-size:12px;letter-spacing:1px;padding:6px 12px;border-radius:20px;pointer-events:none}
+.badge-live{background:rgba(124,196,255,.15);color:#9fd4ff;border:1px solid rgba(124,196,255,.4)}
+.badge-real{background:rgba(240,122,42,.15);color:#ffb37a;border:1px solid rgba(240,122,42,.45)}
+.meter{height:7px;background:#1a2336;border-radius:4px;overflow:hidden;margin:3px 0 7px}
+.meter>div{height:100%;width:0;border-radius:4px;transition:width .12s}
+.vmeter{position:relative;height:10px;background:linear-gradient(90deg,#ff3cd2 0%,#2a3348 50%,#c6ff3c 100%);border-radius:5px;margin:5px 0 3px}
+.vmeter>i{position:absolute;top:-4px;width:3px;height:18px;background:#fff;border-radius:2px;left:50%;box-shadow:0 0 8px #fff}
+#brain-legend{top:14px;left:14px;max-width:215px}
+#brain-legend .item{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;padding:1px 0}
+#brain-legend .item span:last-child{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:11px}
+#circuit{bottom:12px;left:12px;right:12px}
+#circuit svg{width:100%;height:auto;display:block}
+#brain-title{top:14px;right:14px;text-align:right;color:var(--muted);font-size:12px}
+#brain-title b{color:var(--text);font-size:14px}
+#brain-tools{top:58px;right:14px;pointer-events:auto}
+#brain-tools button{padding:6px 10px;font-size:12px}
+#brain-tools button.on{border-color:var(--accent);color:var(--accent)}
+.blabel{font:600 11px Inter,sans-serif;white-space:nowrap;padding:2px 7px;border-radius:6px;background:rgba(5,8,14,.6);text-shadow:0 0 4px #000}
+#why{margin-bottom:8px;font-size:12px}
+.why-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.verdict{font-weight:800;font-size:16px;letter-spacing:1px}
+.tug{height:8px;border-radius:4px;background:var(--avoid);margin:6px 0;overflow:hidden}
+.tug>i{display:block;height:100%;background:var(--approach);transition:width .15s}
+.why-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.why-h{font-size:10.5px;margin-bottom:2px;font-weight:600}
+.tb{display:grid;grid-template-columns:20px 1fr 30px;align-items:center;gap:6px;font-size:10.5px;color:var(--muted)}
+.tb i{display:block;height:6px;border-radius:3px;min-width:1px}
+.tb b{font-family:"JetBrains Mono",monospace;font-weight:500;color:var(--text);text-align:right}
+.because{margin-top:6px;color:var(--muted);font-size:11.5px;line-height:1.4}
+.playback{display:none;margin-top:12px}
+.game{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;text-align:center;z-index:5;
+  background:radial-gradient(circle at 50% 45%,rgba(0,0,0,.25),rgba(0,0,0,.8));animation:gfade .35s steps(5)}
+.game.hidden{display:none}
+.game .scan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 2px,transparent 2px 4px)}
+.game-title{position:relative;font:clamp(24px,4.6vw,58px)/1.1 "Press Start 2P",monospace;letter-spacing:4px;color:#ff2b2b;
+  text-shadow:4px 4px 0 #000,0 0 24px rgba(255,40,40,.55);animation:gpop .5s steps(6)}
+.game.win .game-title{color:#ffd83b;text-shadow:4px 4px 0 #000,0 0 24px rgba(255,216,59,.55)}
+.game-sub{position:relative;font:12px/2.1 "Press Start 2P",monospace;color:#fff;margin:22px 0 28px;text-shadow:2px 2px 0 #000}
+#game-again{position:relative;font:14px "Press Start 2P",monospace;color:#fff;background:#e52521;border:4px solid #fff;border-radius:0;
+  padding:14px 22px;box-shadow:6px 6px 0 #000;cursor:pointer;animation:gblink 1s steps(2) infinite}
+.game.win #game-again{background:#43b047}
+#game-again:hover{filter:brightness(1.15);background:#e52521}
+.game.win #game-again:hover{background:#43b047}
+.game-hint{position:relative;font:9px/1.8 "Press Start 2P",monospace;color:#9aa4b8;margin-top:18px}
+@keyframes gpop{0%{transform:scale(2.4);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes gfade{from{opacity:0}to{opacity:1}}
+@keyframes gblink{50%{box-shadow:6px 6px 0 #000,0 0 0 5px rgba(255,255,255,.35)}}
+.playback.show{display:block}
+.err{color:#ff8a8a}
+.reached{color:var(--approach)!important}
+@media (max-width:1100px){.app{grid-template-columns:1fr!important;grid-template-rows:auto 60vh 60vh;height:auto}.splitter{display:none}html,body{overflow:auto}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div class="app">
+  <aside class="panel">
+    <h1>Fly Brain Sandbox</h1>
+    <div class="sub">FlyWire connectome · 138,639 spiking neurons · NeuroMechFly body</div>
+
+    <h2>Neuromodulators</h2>
+    <div class="knob"><div class="row"><label><span class="dot" style="background:var(--pam)"></span>Reward dopamine (PAM)</label><span class="val" id="v-reward">0.00</span></div>
+      <input type="range" id="reward" min="-1" max="1" step="0.05" value="0">
+      <div class="hint">−1 release blocked · 0 natural · +1 driven 50 Hz</div></div>
+    <div class="knob"><div class="row"><label><span class="dot" style="background:var(--ppl1)"></span>Punishment dopamine (PPL1)</label><span class="val" id="v-punish">0.00</span></div>
+      <input type="range" id="punish" min="-1" max="1" step="0.05" value="0">
+      <div class="hint">−1 blocked (hunger-like) · +1 driven</div></div>
+    <div class="knob"><div class="row"><label><span class="dot" style="background:#ffe03c"></span>Octopamine (OA-VPM4)</label><span class="val" id="v-oa">0.00</span></div>
+      <input type="range" id="oa" min="-1" max="1" step="0.05" value="0">
+      <div class="hint">arousal: faster walking (assumed gain)</div></div>
+
+    <h2>Arena</h2>
+    <div class="knob"><div class="row"><label><span class="dot" style="background:var(--danger)"></span>Danger smell strength</label><span class="val" id="v-danger">1.60</span></div>
+      <input type="range" id="danger" min="0" max="3" step="0.05" value="1.6"></div>
+    <div class="knob"><div class="row"><label>Start heading</label><span class="val" id="v-heading">0°</span></div>
+      <input type="range" id="heading" min="-180" max="180" step="5" value="0"></div>
+    <div class="btns"><button id="reset-pos">Reset positions</button><button id="rand-heading">Random heading</button></div>
+    <div class="note">Drag the <b style="color:var(--food)">orange food</b> and the <b style="color:var(--danger)">blue danger</b> in the 3D arena.</div>
+
+    <h2>Live preview</h2>
+    <div class="btns">
+      <button class="primary" id="play">▶ Start</button><button id="reset">↺ Reset</button>
+      <select id="speed"><option value="0.25">0.25×</option><option value="0.5" selected>0.5×</option><option value="1">1×</option></select>
+    </div>
+    <div class="note">Instant. The brain's decision comes from the real spiking brain, pre-measured at 100 settings. The body is an animated approximation.</div>
+
+    <h2>Real simulation</h2>
+    <div class="btns" style="align-items:center"><span style="color:var(--muted);font-size:12.5px">seed</span><input type="number" id="seed" value="0" min="0" style="width:74px">
+      <span style="color:var(--muted);font-size:12.5px">seconds</span><input type="number" id="seconds" value="6" min="1" max="10" style="width:58px"></div>
+    <div style="margin-top:10px"><button class="real" id="run-real">Run real simulation (~7 min)</button></div>
+    <div class="progress"><div id="prog"></div></div>
+    <div class="status" id="real-status">Full brain + MuJoCo physics, exactly your current setup.</div>
+    <div class="playback" id="playback">
+      <div class="btns"><button class="primary" id="pb-play">▶ Play recording</button><button id="pb-live">Back to live</button>
+        <select id="pb-speed"><option value="0.1">0.1×</option><option value="0.25" selected>0.25×</option><option value="0.5">0.5×</option><option value="1">1×</option></select></div>
+      <input type="range" id="pb-scrub" min="0" max="1000" value="0">
+    </div>
+  </aside>
+
+  <div class="splitter" id="split-left" title="Drag to resize · double-click to reset"><button class="collapse" id="collapse-left" title="Hide/show controls">‹</button></div>
+
+  <section class="view" id="arena">
+    <div id="badge" class="badge-live">LIVE PREVIEW</div>
+    <div class="hud card" id="hud-tl">
+      <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>time</span><span>to food</span></div>
+      <div style="display:flex;justify-content:space-between"><span class="big" id="h-time">0.00 s</span><span class="big" id="h-dist">30.0 mm</span></div>
+      <div id="h-status" style="color:var(--muted);margin-top:4px">Press Start</div>
+      <div style="margin-top:8px;color:var(--muted)">brain decision (valence)</div>
+      <div class="vmeter"><i id="h-val"></i></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>avoid</span><span id="h-valnum">0.00</span><span>approach</span></div>
+    </div>
+    <div class="hud" id="hud-tr"><button id="props-btn" title="Show the food as fruit and the danger as a rolled newspaper">🍎 Props</button><button id="cam-follow" class="on">Follow fly</button><button id="cam-over">Overview</button></div>
+    <div id="game" class="game hidden"><div class="scan"></div><div class="game-title" id="game-title">GAME OVER</div>
+      <div class="game-sub" id="game-sub"></div><button id="game-again">▶ START AGAIN</button><div class="game-hint" id="game-hint"></div></div>
+    <div class="hud" id="hud-bl">Drag objects · right-drag to pan · scroll to zoom</div>
+  </section>
+
+  <div class="splitter" id="split-right" title="Drag to resize · double-click to reset"><button class="collapse" id="collapse-right" title="Hide/show brain">›</button></div>
+
+  <section class="view" id="brainview">
+    <div class="hud card" id="brain-legend"></div>
+    <div class="hud" id="brain-title"><b>Brain activity</b><br><span id="brain-mode">rates from the real brain at these settings</span></div>
+    <div class="hud" id="brain-tools"><button id="focus-btn" class="on" title="Spotlight the neurons that make the decision">Decision focus</button></div>
+    <div class="hud card" id="circuit"></div>
+  </section>
+</div>
+<script>
+// resizable side panels: drag the splitters; minimum widths keep every label readable; collapse hides fully
+(() => {
+  const app = document.querySelector('.app'), aside = document.querySelector('.panel'), brain = document.getElementById('brainview');
+  const MIN_L = 260, MAX_L = 520, MIN_R = 340, MIN_MAP = 320, KEY = 'fly-sandbox-layout';
+  const def = () => ({ left: 330, right: Math.round(innerWidth * .36), hideL: false, hideR: false });
+  let st = def();
+  try { Object.assign(st, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
+  const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+  function apply() {
+    if (innerWidth <= 1100) { app.style.gridTemplateColumns = ''; return; }
+    let l = st.hideL ? 0 : clamp(st.left, MIN_L, MAX_L);
+    let r = st.hideR ? 0 : clamp(st.right, MIN_R, innerWidth * .62);
+    const over = l + r + 16 + MIN_MAP - innerWidth;
+    if (over > 0 && !st.hideR) r = Math.max(MIN_R, r - over);
+    app.style.gridTemplateColumns = `${l}px 8px minmax(${MIN_MAP}px,1fr) 8px ${r}px`;
+    aside.classList.toggle('collapsed', st.hideL); brain.classList.toggle('collapsed', st.hideR);
+    document.getElementById('collapse-left').textContent = st.hideL ? '›' : '‹';
+    document.getElementById('collapse-right').textContent = st.hideR ? '‹' : '›';
+    try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {}
+  }
+  function drag(el, side) {
+    el.addEventListener('pointerdown', e => {
+      if (e.target.closest('.collapse')) return;
+      el.setPointerCapture(e.pointerId); el.classList.add('drag');
+      const move = ev => {
+        if (side === 'l') { st.left = ev.clientX; st.hideL = false; } else { st.right = innerWidth - ev.clientX; st.hideR = false; }
+        apply();
+      };
+      const up = () => { el.classList.remove('drag'); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); };
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', up);
+    });
+    el.addEventListener('dblclick', e => { if (!e.target.closest('.collapse')) { st = def(); apply(); } });
+  }
+  drag(document.getElementById('split-left'), 'l'); drag(document.getElementById('split-right'), 'r');
+  document.getElementById('collapse-left').onclick = () => { st.hideL = !st.hideL; apply(); };
+  document.getElementById('collapse-right').onclick = () => { st.hideR = !st.hideR; apply(); };
+  addEventListener('resize', apply); apply();
+})();
+</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

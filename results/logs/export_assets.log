@@ -1,0 +1,10 @@
+meshes 69 antenna offsets (mm) {'L': [0.5086736977100372, 0.08564360067248344], 'R': [0.5086736977100372, -0.08564360067248344]}
+walk frames 100
+  action [1.0, 1.0]: 15.9 mm/s, -12 deg/s
+  action [1.2, 1.2]: 19.1 mm/s, +18 deg/s
+  action [1.0, 0.6]: 11.4 mm/s, -86 deg/s
+  action [0.6, 1.0]: 12.0 mm/s, +75 deg/s
+  action [1.0, 0.2]: 5.5 mm/s, -139 deg/s
+  action [0.2, 1.0]: 6.6 mm/s, +151 deg/s
+motion {'speed_per_drive': 14.577810979104257, 'yaw_per_diff': 3.2386000752449036}
+wrote C:\Users\david\Desktop\Firebird-chanj\embodied\sandbox\assets

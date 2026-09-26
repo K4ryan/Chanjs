@@ -1,0 +1,57 @@
+  reward_DA_up             seed  0 reached=True min_food=2.0mm wall=225.8s
+  baseline                 seed  0 reached=True min_food=1.8mm wall=367.9s
+  punish_DA_blocked        seed  0 reached=True min_food=1.9mm wall=190.1s
+  punish_DA_up             seed  0 reached=False min_food=26.7mm wall=436.0s
+  reward_DA_blocked        seed  0 reached=False min_food=27.6mm wall=442.3s
+  reward_DA_up             seed  1 reached=True min_food=1.7mm wall=185.7s
+  octopamine_up            seed  0 reached=True min_food=1.3mm wall=323.4s
+  baseline                 seed  1 reached=True min_food=1.6mm wall=288.2s
+  reward_DA_blocked        seed  1 reached=False min_food=24.0mm wall=410.9s
+  punish_DA_blocked        seed  1 reached=True min_food=1.9mm wall=177.3s
+  punish_DA_up             seed  1 reached=True min_food=1.9mm wall=383.7s
+  octopamine_up            seed  1 reached=True min_food=2.0mm wall=288.9s
+  reward_DA_up             seed  2 reached=True min_food=1.9mm wall=203.4s
+  baseline                 seed  2 reached=False min_food=29.6mm wall=394.7s
+  punish_DA_blocked        seed  2 reached=True min_food=1.9mm wall=182.4s
+  reward_DA_blocked        seed  2 reached=False min_food=29.9mm wall=389.6s
+  punish_DA_up             seed  2 reached=False min_food=29.8mm wall=388.6s
+  octopamine_up            seed  2 reached=True min_food=1.8mm wall=251.2s
+  reward_DA_up             seed  3 reached=True min_food=1.8mm wall=236.3s
+  baseline                 seed  3 reached=False min_food=30.0mm wall=388.4s
+  reward_DA_blocked        seed  3 reached=False min_food=30.0mm wall=387.6s
+  punish_DA_blocked        seed  3 reached=True min_food=1.7mm wall=221.1s
+  punish_DA_up             seed  3 reached=False min_food=30.0mm wall=382.5s
+  octopamine_up            seed  3 reached=False min_food=30.0mm wall=386.8s
+  baseline                 seed  4 reached=False min_food=30.1mm wall=379.1s
+  reward_DA_up             seed  4 reached=True min_food=1.9mm wall=316.4s
+  reward_DA_blocked        seed  4 reached=False min_food=30.1mm wall=376.5s
+  punish_DA_blocked        seed  4 reached=True min_food=1.7mm wall=234.0s
+  punish_DA_up             seed  4 reached=False min_food=30.1mm wall=383.3s
+  octopamine_up            seed  4 reached=False min_food=30.1mm wall=362.3s
+  baseline                 seed  5 reached=True min_food=1.9mm wall=324.3s
+  reward_DA_up             seed  5 reached=True min_food=1.9mm wall=186.0s
+  punish_DA_blocked        seed  5 reached=True min_food=1.8mm wall=194.0s
+  reward_DA_blocked        seed  5 reached=False min_food=30.0mm wall=382.4s
+  punish_DA_up             seed  5 reached=False min_food=30.0mm wall=393.0s
+  octopamine_up            seed  5 reached=False min_food=4.2mm wall=379.8s
+  reward_DA_up             seed  6 reached=True min_food=1.8mm wall=178.9s
+  baseline                 seed  6 reached=False min_food=25.3mm wall=418.8s
+  punish_DA_blocked        seed  6 reached=True min_food=1.9mm wall=208.6s
+  reward_DA_blocked        seed  6 reached=False min_food=24.3mm wall=447.6s
+  punish_DA_up             seed  6 reached=False min_food=3.9mm wall=452.7s
+  octopamine_up            seed  6 reached=True min_food=2.0mm wall=321.9s
+  reward_DA_up             seed  7 reached=True min_food=1.8mm wall=204.7s
+  baseline                 seed  7 reached=False min_food=5.5mm wall=470.1s
+  punish_DA_blocked        seed  7 reached=True min_food=2.0mm wall=205.3s
+  reward_DA_blocked        seed  7 reached=False min_food=27.7mm wall=474.3s
+  octopamine_up            seed  7 reached=True min_food=1.6mm wall=294.7s
+  punish_DA_up             seed  7 reached=False min_food=5.2mm wall=467.6s
+
+condition                reached     95% CI      p vs baseline  min food dist  path mm
+baseline                  3/8   [0.14-0.69]        nan     15.7      98.9
+reward_DA_up              8/8   [0.68-1.00]      0.026      1.8      44.4
+reward_DA_blocked         0/8   [0.00-0.32]      0.200     27.9     110.9
+punish_DA_up              1/8   [0.02-0.47]      0.569     19.7     109.0
+punish_DA_blocked         8/8   [0.68-1.00]      0.026      1.9      43.6
+octopamine_up             5/8   [0.31-0.86]      0.619      9.1     103.2
+wrote results\knobs\knobs_trajectories.png
