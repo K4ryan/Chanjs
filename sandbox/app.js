@@ -653,8 +653,10 @@ async function runReal() {
   poll();
 }
 async function loadRecording(id) {
-  const [run, poses, sidx, scnt] = await Promise.all([json(`/runs/${id}/run.json`), bin(`/runs/${id}/poses.bin`, Float32Array),
-    bin(`/runs/${id}/spikes_idx.bin`, Uint32Array), bin(`/runs/${id}/spikes_cnt.bin`, Uint8Array)]);
+  const get = base => Promise.all([json(`${base}/run.json`), bin(`${base}/poses.bin`, Float32Array),
+    bin(`${base}/spikes_idx.bin`, Uint32Array), bin(`${base}/spikes_cnt.bin`, Uint8Array)]);
+  // local server: /runs/<id>; static host (GitHub Pages): the committed results folder
+  const [run, poses, sidx, scnt] = await get(`/runs/${id}`).catch(() => get(`../results/sandbox/${id}`));
   rec = { ...run, poses, sidx, scnt, lastW: -1, groupRate: new Array(meta.legend.length).fill(0), typeRate: new Array(decTypes.length).fill(0) };
   world.food = [...run.params.food]; world.danger = [...run.params.danger_pos];
   const s = run.summary;
