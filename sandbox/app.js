@@ -343,14 +343,29 @@ brainGeo.setAttribute('aGlow', new THREE.BufferAttribute(glow, 1));
 // decision focus: approach/avoid MBONs (1) and the dopamine neurons that weaken them (.6) are spotlighted
 const bDec = Float32Array.from(ngrp, g => (g === 6 || g === 7) ? 1 : (g === 4 || g === 5) ? .6 : 0);
 brainGeo.setAttribute('aDec', new THREE.BufferAttribute(bDec, 1));
+// blink = the path the chemical acts on, deeper for a bigger effect. Only the decision circuit + octopamine can blink
+// (many other neurons shift too). Depth = the knob's own neurons at |knob| (also when blocked, which stops release but
+// not spiking) or the rate change vs. the no-drug brain at the same odor, interpolated like the decision (lookup).
+const keyIdx = [], keySlot = new Int32Array(NN).fill(-1), chg = new Float32Array(NN);
+for (let i = 0; i < NN; i++) if (bDec[i] || ngrp[i] === 10) keySlot[i] = keyIdx.push(i) - 1;
+brainGeo.setAttribute('aChg', new THREE.BufferAttribute(chg, 1));
+function updateBlink(k, odor) {
+  const cur = lookup(k.reward, k.punish, odor).key, base = lookup(0, 0, odor).key;
+  const src = { 4: k.reward, 5: k.punish, 10: k.octopamine };
+  // ponytail: |log rate ratio| - 0.2 (+10 Hz floor) is hand-tuned; spike noise stays below it, silencing/driving reaches 1
+  keyIdx.forEach((i, s) => { chg[i] = Math.max(Math.abs(src[ngrp[i]] || 0), clamp(Math.abs(Math.log((cur[s] + 10) / (base[s] + 10))) - .2, 0, 1)); });
+  brainGeo.attributes.aChg.needsUpdate = true;
+}
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;   // uTime stays 0: steady highlight, no flashing
 const brainPts = new THREE.Points(brainGeo, new THREE.ShaderMaterial({
-  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uSize: { value: 20 * Math.min(devicePixelRatio, 2) }, uHalf: { value: ACT_HALF }, uFocus: { value: 1 } },
-  vertexShader: `attribute vec3 aColor; attribute vec4 aStyle; attribute float aGlow; attribute float aDec; uniform float uSize, uHalf, uFocus; varying vec3 vC;
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uSize: { value: 20 * Math.min(devicePixelRatio, 2) }, uHalf: { value: ACT_HALF }, uFocus: { value: 1 }, uTime: { value: 0 } },
+  vertexShader: `attribute vec3 aColor; attribute vec4 aStyle; attribute float aGlow; attribute float aDec; attribute float aChg; uniform float uSize, uHalf, uFocus, uTime; varying vec3 vC;
     void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*mv;
       float level = aGlow / (aGlow + uHalf);
-      float big = 1. + uFocus * aDec * 1.6, dimRest = mix(1., mix(.2, 1., step(.01, aDec)), uFocus);
-      gl_PointSize = mix(aStyle.y, aStyle.w, level) * big * uSize / -mv.z;
-      vC = aColor * mix(aStyle.x, aStyle.z, level) * dimRest; }`,
+      float spot = max(aDec, aChg), big = 1. + uFocus * spot * 1.6, dimRest = mix(1., mix(.2, 1., step(.01, spot)), uFocus);
+      float on = step(fract(uTime * 2.), .5);   // 2 Hz on/off, under the 3 flashes/s photosensitivity limit
+      gl_PointSize = max(mix(aStyle.y, aStyle.w, level), aChg * aStyle.w) * big * uSize / -mv.z;
+      vC = aColor * max(mix(aStyle.x, aStyle.z, level), aChg * aStyle.z) * mix(1., mix(.12, 1., on), aChg) * dimRest; }`,
   fragmentShader: `varying vec3 vC; void main(){ vec2 d = gl_PointCoord - .5; float r = dot(d,d)*4.; if (r > 1.) discard;
       float a = 1. - r; gl_FragColor = vec4(vC * a * a, 1.); }`
 }));
@@ -419,7 +434,7 @@ function updateFocus(d) {
 
 // legend + circuit strip
 const KEY = [1, 2, 3, 4, 5, 6, 7, 9, 10];
-$('brain-legend').innerHTML = '<div style="color:var(--muted);font-size:11px;margin-bottom:4px">group · mean rate</div>' +
+$('brain-legend').innerHTML = '<div style="color:var(--muted);font-size:11px;margin-bottom:4px">group · mean rate<br>blinking = changed by the drug vs. none<br>deeper blink = bigger change</div>' +
   KEY.map(k => `<div class="item"><span><span class="dot" style="background:${meta.legend[k].color}"></span>${meta.legend[k].name}</span><span id="lg${k}">–</span></div>`).join('');
 $('circuit').innerHTML = `<svg viewBox="0 0 640 158" font-family="Inter" font-size="11">
   <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#8b97ad"/></marker>
@@ -465,10 +480,11 @@ function frac(arr, v) { v = clamp(v, arr[0], arr[arr.length - 1]); let i = 0; wh
 const P = (ri, pi, oi) => val.points[(ri * K.length + pi) * OD.length + oi];
 function lookup(reward, punish, odor) {
   const [ri, rt] = frac(K, reward), [pi, pt] = frac(K, punish), [oi, ot] = frac(OD, odor);
-  const out = { approach: 0, avoid: 0, pam: 0, ppl1: 0 };
+  const out = { approach: 0, avoid: 0, pam: 0, ppl1: 0, key: new Float32Array(keyIdx.length) };
   for (const [a, wa] of [[ri, 1 - rt], [ri + 1, rt]]) for (const [b, wb] of [[pi, 1 - pt], [pi + 1, pt]]) for (const [c, wc] of [[oi, 1 - ot], [oi + 1, ot]]) {
     const p = P(a, b, c), w = wa * wb * wc; if (!w) continue;
     out.approach += w * p.approach; out.avoid += w * p.avoid; out.pam += w * p.pam_mean; out.ppl1 += w * p.ppl1_mean;
+    for (let s = 0; s < out.key.length; s++) out.key[s] += w * p.key[s];
   }
   return out;
 }
@@ -484,7 +500,8 @@ async function loadVal() {
       const mean = f => { const x = tr.filter(([k]) => f(k)).map(([, y]) => y); return x.reduce((a, b) => a + b, 0) / Math.max(x.length, 1); };
       p.pam_mean = mean(k => k.startsWith('PAM')); p.ppl1_mean = mean(k => k.startsWith('PPL1'));
       const sum = new Float64Array(meta.legend.length);
-      for (let j = p.sparse[0]; j < p.sparse[0] + p.sparse[1]; j++) sum[ngrp[bi[j]]] += br[j];
+      p.key = new Float32Array(keyIdx.length);    // dense rates of the neurons that can blink
+      for (let j = p.sparse[0]; j < p.sparse[0] + p.sparse[1]; j++) { sum[ngrp[bi[j]]] += br[j]; if (keySlot[bi[j]] >= 0) p.key[keySlot[bi[j]]] = br[j]; }
       p.groupRate = Array.from(sum, (x, g) => x / Math.max(groupSize[g], 1));
     }
     [val, bidx, brates, K, OD] = [v, bi, br, v.knob, v.odor_hz];
@@ -779,7 +796,12 @@ if (!await loadVal()) {
   setStartReady(false);
   const poll = setInterval(async () => { if (await loadVal()) { clearInterval(poll); setStartReady(true); } }, 20000);
 }
-const runParam = new URLSearchParams(location.search).get('run');   // reopen a past real run: ?run=<id>
+const qs = new URLSearchParams(location.search);   // stage presets, e.g. ?heading=180&reward=0&seed=0&props=1
+for (const k of ['reward', 'punish', 'oa', 'danger', 'heading', 'seed']) if (qs.has(k)) { $(k).value = qs.get(k); $(k).dispatchEvent(new Event('input')); }
+if (qs.get('props') === '1') setProps(true);
+if (qs.get('cam') === 'over') $('cam-over').click();
+liveReset();
+const runParam = qs.get('run');   // reopen a past real run: ?run=<id>
 if (runParam && /^[0-9a-f]{10}$/.test(runParam)) loadRecording(runParam);
 const clock = new THREE.Clock(); let hudT = 0;
 const flyPos = new THREE.Vector3();
@@ -797,6 +819,9 @@ function frame() {
   const simDt = mode === 'live' && playing ? rdt * +$('speed').value : 0;   // playback decays per recorded window
   if (simDt > 0) { const k = Math.exp(-simDt / ACT_TAU); for (let i = 0; i < NN; i++) glow[i] *= k; }
   brainGeo.attributes.aGlow.needsUpdate = true;
+  if (val && mode === 'live') updateBlink(ui.knobs, live.orn);   // follows the sliders, paused too
+  else if (val) updateBlink(rec.params, recRow(recT).orn_hz ?? 40);
+  brainPts.material.uniforms.uTime.value = reduceMotion ? 0 : t;
   // ambience
   odorMat.uniforms.uTime.value = t;
   dangerCloud.material.opacity = 0.07 + 0.03 * Math.sin(t * 2.2);
