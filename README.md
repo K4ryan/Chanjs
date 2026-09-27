@@ -65,6 +65,12 @@ Main result, from `results/logs/results_knobs.log`: the fly reached the food beh
 | `sandbox/`, `sandbox_server.py` | 3D sandbox |
 | `results/` | All recordings: MP4 videos, sweep JSON, trajectory PNGs, sandbox replays (`sandbox/<id>/`), console logs (`logs/`) |
 
+## Team
+
+- **David Karyan** ([@K4ryan](https://github.com/K4ryan)), AI Automation Engineer
+- **Grigori Grigoryan** ([@GrigoriGrigoryan](https://github.com/GrigoriGrigoryan)), Full Stack Engineer
+- **Hakob Petrosyan** ([@hakob-petro](https://github.com/hakob-petro)), ML Engineer
+
 ## Credits and licenses
 
 - **Code:** [MIT](LICENSE). `brain.py` is a numba port of the `FlyBrain` model in [dicnunz/fly-brain-feeding](https://github.com/dicnunz/fly-brain-feeding) (MIT), whose notice is kept in `LICENSE`.
