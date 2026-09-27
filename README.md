@@ -1,6 +1,6 @@
-# Embodied fly: dopamine → decision neurons → walking to food
+# Chanjs: a fly brain that decides, a fly body that walks
 
-A FlyWire v783 whole-brain spiking model (Shiu et al. 2024 parameters, 138,639 neurons, 15.1M connections) runs in closed loop with a NeuroMechFly body (flygym-gymnasium 1.3.2, MuJoCo physics) in an odor arena. You set neuromodulator levels and see how the fly's behavior changes.
+A whole-brain spiking model of the fruit fly (FlyWire v783, 138,639 neurons, 15.1 M connections, Shiu et al. 2024 parameters) runs in closed loop with a physics body (NeuroMechFly/MuJoCo) in an odor arena. Change **dopamine** and **octopamine** levels, and see whether the fly walks past danger to reach food.
 
 ```
 odor at antennae ─► food / danger ORNs ─► whole brain ─► mushroom body ─► approach vs avoid MBONs = VALENCE
@@ -10,121 +10,65 @@ odor at antennae ─► food / danger ORNs ─► whole brain ─► mushroom bo
 VALENCE × food-odor L/R contrast ─► steering reflex ─► [left, right] leg drive ─► body walks
 ```
 
-## Run
+Model details, data vs. assumptions, and findings are in [MODEL.md](MODEL.md).
 
-```bash
+## Requirements
+
+- Tested on Windows 11 with Python **3.12.3**, a Ryzen 5 5600H (6 cores) and 11 GB RAM. No GPU is used.
+- About 2 GB of free disk: 190 MB of data, plus the Python environment.
+
+## Replicate (PowerShell, from a fresh clone)
+
+```powershell
+git clone https://github.com/K4ryan/Chanjs.git
+cd Chanjs
 py -3.12 -m venv .venv
-.venv/Scripts/python -m pip install -r requirements.txt
-.venv/Scripts/python fetch_data.py                      # ~190 MB download, builds data/circuit.npz
-.venv/Scripts/python test_brain.py                      # Brian2 fixture + dopamine locality
-.venv/Scripts/python run.py --seed 0 --video base.mp4
-.venv/Scripts/python run.py --seed 0 --dopamine-reward -1 --video no_reward_da.mp4
-.venv/Scripts/python sweep.py --set knobs --seeds 10    # background job, ~1-2 h
+.venv\Scripts\python -m pip install -r requirements.txt   # exact pinned environment
+.venv\Scripts\python fetch_data.py                        # downloads 135 MB from pinned commits, checks SHA256, builds data/circuit.npz
+.venv\Scripts\python test_brain.py                        # must print "fixture ok" and "dopamine ok"
+.venv\Scripts\python sandbox_server.py                    # open http://127.0.0.1:8765
 ```
 
-Knobs range from −1 to +1:
-- **+1** drives that neuron population with 50 Hz Poisson input.
-- **−1** blocks its release.
-- `--dopamine-reward` controls the PAM cluster.
-- `--dopamine-punish` controls PPL1. Blocking it is hunger-like (Tsao 2018).
-- `--octopamine` controls OA-VPM4.
+On Linux or macOS, use `python3.12` and `.venv/bin/python`.
 
-Speed on a Ryzen 5 5600H is about 80 s of wall time per simulated second (body ≈ 37 s, brain ≈ 20–40 s). A 6 s trial takes about 8 minutes.
+In the sandbox:
+- Drag the food and danger, then move the sliders and press **▶ Start** for the instant preview.
+- **Run real simulation** runs the full brain plus physics, about 80 s of wall time per simulated second.
+- To replay a committed recording, add `?run=<id>` to the URL, for example `?run=2ea7f28129` (baseline, danger 1.6, 6 s). Every folder in `results/sandbox/` is a replayable run.
 
-## 3D sandbox
+The sandbox assets in `sandbox/assets/` are committed. To rebuild them, run `export_assets.py` (minutes) and `precompute_valence.py` (about 2 h).
 
-```bash
-.venv/Scripts/python export_assets.py         # once: fly meshes, walk clip, motion calibration, neuron positions
-.venv/Scripts/python precompute_valence.py    # once (~2 h): the real brain's decision for 100 knob/odor settings
-.venv/Scripts/python sandbox_server.py        # then open http://127.0.0.1:8765
-```
+## Reproduce the recorded results
 
-- **Live preview (instant):**
-  - Drag the food and danger around, and move the dopamine, octopamine, danger and heading sliders.
-  - The decision uses the precomputed spiking-brain table, interpolated.
-  - The body is the real NeuroMechFly mesh playing a recorded gait clip, moved by a kinematic model fitted to the physics body. The steering reflex is the same as `run.py`.
-  - The brain view samples spikes from the real brain's firing rates at the nearest grid setting.
-- **Run real simulation (~80 s of wall time per simulated second):**
-  - Runs `run.py --record` with exactly your setup: full brain and MuJoCo physics.
-  - The result then replays in the same scene with the recorded body poses (every 10 ms) and every recorded spike.
-  - To reopen a past run, use `http://127.0.0.1:8765/?run=<id>`. The run folders are in `results/sandbox/`.
-- **Live vs. real check:** the main-experiment arena, the same 8 start headings, and 10 wobble seeds per heading (`window.sandboxDebug.run` in the page).
+Each command writes JSON, a trajectory plot and a seed-0 video. The results table is printed at the end of the matching `results/logs/*.log`. Wall times are from the tested PC, running 4 trials in parallel.
 
-  | Condition | Real | Live |
-  |---|---|---|
-  | baseline | 3/8 | 17% |
-  | reward DA +1 | 8/8 | 100% |
-  | reward DA −1 | 0/8 | 0% |
-  | punish DA +1 | 1/8 | 10% |
-  | punish DA −1 | 8/8 | 100% |
-  | octopamine +1 | 5/8 | 33% |
+| Output | Command | Wall time |
+|---|---|---|
+| `results/calibration*` | `.venv\Scripts\python sweep.py --set calibration --seeds 8` | 26 min |
+| `results/danger_<d>/` (d = 1, 1.5, 1.75, 3, 6) | `.venv\Scripts\python sweep.py --set baseline --seeds 8 --danger <d> --out results/danger_<d>` | 8–14 min each |
+| `results/knobs/` (main experiment) | `.venv\Scripts\python sweep.py --set knobs --seeds 8 --danger 1.6 --out results/knobs` | 65 min |
+| a single trial / video | `.venv\Scripts\python run.py --seed 0 --dopamine-reward 1 --danger 1.6 --video out.mp4` | about 8 min |
 
-  The main effects match. The preview is more cautious in the borderline conditions, so confirm those with a real run. The live walker has a hand-set heading wobble (0.35 rad/√s) standing in for gait sway.
-- **Brain view:** the real FlyWire positions of all 138,639 neurons. The key circuit groups are coloured, and the strip at the bottom shows the chain: smell → Kenyon cells → approach/avoid MBONs (weakened by PPL1/PAM dopamine) → decision.
+`results/danger_2/` is an interrupted run: it has the video only.
 
-## What is data vs. what is assumed
+Main result, from `results/logs/results_knobs.log`: the fly reached the food behind the danger in **3/8** baseline trials. That rose to **8/8** with reward dopamine up and **8/8** with punishment dopamine blocked, and fell to **0/8** with reward dopamine blocked.
 
-| Part | Source |
+**Determinism:** everything is seeded, so reruns on the same machine give identical trials. Another CPU or OS can differ in the last floating-point bits, which can flip a borderline trial but not the overall table.
+
+## Repository map
+
+| Path | What it is |
 |---|---|
-| Neurons, synapse counts, signs, LIF parameters | Shiu et al. 2024 v783 files (`Connectivity_783.parquet`) |
-| Neuron identities (ORN glomeruli, KC, MBON, PAM/PPL1, DNs) | FlyWire annotations (`Supplemental_file1_neuron_annotations.tsv`) |
-| Which DAN type modulates which MBON (compartments) | **Derived from the connectome**: DAN→MBON synapse share ≥20% (`fetch_data.py` prints the table; it matches the literature, e.g. PPL101→MBON11 86%, PPL106→MBON14 95%, PAM11→MBON07 95%) |
-| DAN/OA neurons have no fast synapses; they act only by scaling KC→MBON transmission, as `1/(1 + Σ share·rate/10 Hz)` | **Assumption.** No connectome-scale receptor map exists. |
-| Approach MBONs (11, 12, 13, 14) vs avoidance MBONs (01, 03, 04, 26, 27) | Literature (Aso 2014, Tsao 2018) plus a path audit (MBON26/27 → MDN) |
-| Steering reflex toward the stronger food odor, scaled by valence; innate turn away from danger | **Assumption / reflex.** See the finding below. |
-| Octopamine increases walking speed | **Assumption** (readout gain) |
-| Sensory ORN synapses forced excitatory | FlyWire transmitter predictions for ORNs are unreliable ("serotonin") |
+| `brain.py` | Whole-brain LIF model (numba) with the dopamine/octopamine layer |
+| `run.py`, `sweep.py` | One closed-loop trial; batches of trials |
+| `fetch_data.py` | Downloads and checks the connectome, builds `data/circuit.npz` |
+| `sandbox/`, `sandbox_server.py` | 3D sandbox |
+| `results/` | All recordings: MP4 videos, sweep JSON, trajectory PNGs, sandbox replays (`sandbox/<id>/`), console logs (`logs/`) |
 
-## Findings so far
+## Credits and licenses
 
-1. **The unmodified whole brain cannot steer.**
-   - Stimulating left-only, right-only or both-side food ORNs (10–150 Hz, 3 seeds) drives about 150 descending neurons.
-   - None of them carries a reliable left/right difference. DNa02_L fires about 50 Hz regardless of side, and DNa02_R about 0 Hz.
-   - DNp09 (forward) and MDN (backward) stay silent.
-   - So steering uses a labelled reflex. Other embodied projects hand-tune it too: NeuroFly steers mostly from the odor gradient, and Eon Systems says its gains were "chosen by hand".
-2. **Dopamine does move the brain's food decision.** Brain-only runs (food odor both sides at 40 Hz, 6 seeds, mean approach − avoid MBON rate):
-
-   | Condition | Approach Hz | Avoid Hz | Index |
-   |---|---|---|---|
-   | baseline | 31.7 | 14.5 | +17 |
-   | reward DA +1 (PAM driven) | 29.1 | 0.0 | +29 |
-   | reward DA −1 (PAM blocked) | 30.0 | 26.0 | +4 |
-   | punish DA +1 (PPL1 driven) | 30.8 | 14.7 | +16 |
-   | punish DA −1 (PPL1 blocked, hunger-like) | 132 | 14.2 | **+118** |
-   | octopamine ±1 | 31.8 | 14.7 | +17 (no effect) |
-
-3. **Closed-loop calibration passes.** The steering gain is frozen at flygym's 500 × valence, and the danger reflex gain is frozen at 80 × danger strength. Results over 8 seeds per condition, 6 s trials, food 30 mm away, random start heading over 360°:
-
-   | Condition | Reached food | Mean closest approach |
-   |---|---|---|
-   | food odor | 8/8 | 1.9 mm |
-   | odor off | 0/8 | 20 mm |
-   | brain's food ORNs silenced (the reflex still smells the food) | 0/8 | 20 mm |
-
-   The fly only uses the odor gradient when the brain's MBONs produce approach valence. Plot: `results/calibration_trajectories.png`.
-
-4. **Main experiment: dopamine changes whether the fly passes the danger to reach food.**
-   - Setup: food at (30, 0), danger strength 1.6 at (15, 0) on the direct path, 8 seeds, headings matched across conditions (`sweep.py --set knobs --danger 1.6`).
-   - Plot: `results/knobs/knobs_trajectories.png`.
-
-   | Condition | Mean valence | Reached | Mean time | Fisher p vs baseline |
-   |---|---|---|---|---|
-   | baseline | +0.39 | 3/8 | 4.8 s | – |
-   | reward DA +1 | +0.92 | 8/8 | 3.2 s | 0.026 |
-   | punish DA −1 (hunger-like) | +0.78 | 8/8 | 3.0 s | 0.026 |
-   | reward DA −1 | +0.10 | 0/8 | – | 0.20 |
-   | punish DA +1 | +0.37 | 1/8 | 5.9 s | 0.57 |
-   | octopamine +1 | +0.39 | 5/8 | 4.0 s | 0.62 |
-
-   - The p-values are uncorrected. Across 5 comparisons, Bonferroni needs p < 0.01, so the two 8/8 results are strong trends at n = 8. More seeds are needed.
-   - The behavioral effect follows the brain's valence change by construction: the readout scales steering by valence. The non-trivial part is which knobs change valence, and by how much, in the spiking connectome.
-
-5. **Model limitation.** With food odor, the brain's own PPL1 neurons fire at 170–370 Hz, which is unphysiological for this LIF model. That endogenous "punishment" dopamine already silences MBON11. This is why driving PPL1 further does nothing, while blocking it has the largest effect.
-
-## Files
-
-- `fetch_data.py`: download the data and build the groups and compartments.
-- `brain.py`: numba LIF plus the modulation channel.
-- `run.py`: one closed-loop trial.
-- `sweep.py`: conditions × seeds, with statistics and a plot.
-- `test_brain.py`: checks.
+- **Code:** [MIT](LICENSE). `brain.py` is a numba port of the `FlyBrain` model in [dicnunz/fly-brain-feeding](https://github.com/dicnunz/fly-brain-feeding) (MIT), whose notice is kept in `LICENSE`.
+- **LIF model and weights:** Shiu et al., *Nature* 2024 ([philshiu/Drosophila_brain_model](https://github.com/philshiu/Drosophila_brain_model)).
+- **Connectome and annotations:** FlyWire (Dorkenwald et al. 2024; Schlegel et al. 2024), **CC BY-NC 4.0**, so the connectome is for non-commercial use only.
+- **Body:** NeuroMechFly / [flygym](https://github.com/NeLy-EPFL/flygym), Apache-2.0.
+- **3D rendering:** three.js, MIT.
